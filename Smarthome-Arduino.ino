@@ -6,10 +6,11 @@
 
 
   // Wifi SSID
-  #define SSID "<ssid here>"
   
   // Wifi password
-  #define PASSWORD "<password here>"
+
+  //Define pins
+  #define BUZZER D9
 #else
   #include "SPI.h"
   #include "Ethernet.h"
@@ -21,6 +22,9 @@
     0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
   };
   IPAddress ip(192, 168, 1, 177);
+
+  //Define pins
+  #define BUZZER 9
 #endif
 
 // Device hostname
@@ -32,12 +36,16 @@
 // Timeout in seconds
 #define TIMEOUT 2
 
+//Define global variable
+bool buzzerActive = false;
 
 Server server(PORT);
 
 void setup(){
   Serial.begin(115200);
-  delay(1000);
+  while (!Serial) {
+    delay(10);
+  }
 
 #ifdef ARDUINO_ARCH_ESP8266
   WiFi.begin(SSID, PASSWORD);
@@ -67,10 +75,22 @@ void setup(){
 #endif
  
   server.begin();
+
+  //pinModes
+  pinMode(BUZZER, OUTPUT);
+}
+
+void buzzer(){
+  if(!buzzerActive) return;
+  tone(BUZZER, 2000);
+  delay(100); 
+  noTone(BUZZER);
+  delay(100);
 }
  
 void loop(){
   Client client = server.available();
+  buzzer();
   if (!client) return;
   Serial.println("Client connected");
   
@@ -84,8 +104,8 @@ void loop(){
     
     if(data != ""){
       data.trim(); 
-      if(data == "example"){
-        client.println("example");
+      if(data == "buzzer"){
+        buzzerActive = !buzzerActive;
         break;
       }
     }
