@@ -2,9 +2,9 @@
  
 const char* ssid = "";
 const char* password = "";
-WiFiServer wifiServer(80);
+WiFiServer wifiServer(6001);
 
-void setup() {
+void setup(){
   Serial.begin(115200);
   delay(1000);
  
@@ -21,26 +21,28 @@ void setup() {
   wifiServer.begin();
 }
  
-void loop() {
+void loop(){
   WiFiClient client = wifiServer.available();
- 
-  if (client) {
-    Serial.println("Client connected");
+  if (!client) return;
+  Serial.println("Client connected");
+  for(uint8_t i = 0; i < 40 && client.connected(); i++){ // 2 Seconds
+    String data = "";
     
-    while (client.connected()) {
-      String data = "";
-      
-      while (client.available() > 0) {
-        char c = client.read();        
-        data.concat(c);
-      }
-      
-      if(data != ""){
-        Serial.println(data);
+    while (client.available() > 0) {
+      char c = client.read();        
+      data.concat(c);
+    }
+       client.println("Hallo");
+    if(data != ""){
+      data.trim(); 
+      if(data == "example"){
+        client.println("example");
+        break;
       }
     }
-    
-    client.stop(); 
-    Serial.println("Client disconnected");
+    delay(50);
   }
+  
+  client.stop(); 
+  Serial.println("Client disconnected");
 }
