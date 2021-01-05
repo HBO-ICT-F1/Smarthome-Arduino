@@ -6,8 +6,10 @@
 
 
   // Wifi SSID
+  #define SSID "Secret"
   
   // Wifi password
+  #define PASSWORD "Secret"
 
   //Define pins
   #define BUZZER D9
