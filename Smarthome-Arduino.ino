@@ -6,10 +6,10 @@
 
 
   // Wifi SSID
-  #define SSID "Secret"
+//  #define SSID "Secret"
   
   // Wifi password
-  #define PASSWORD "Secret"
+//  #define PASSWORD "Secret"
 
   //Define pins
   #define BUZZER D9
@@ -33,7 +33,7 @@
 #define HOSTNAME "Smarthome"
 
 // Server port
-#define PORT 6001
+#define PORT 80
 
 // Timeout in seconds
 #define TIMEOUT 2
@@ -94,27 +94,17 @@ void loop(){
   Client client = server.available();
   buzzer();
   if (!client) return;
-  Serial.println("Client connected");
-  
-  for(uint8_t i = 0; i < TIMEOUT * 20 && client.connected(); i++){
-    String data = "";
-    
-    while (client.available() > 0) {
-      char c = client.read();        
-      data.concat(c);
-    }
-    
-    if(data != ""){
-      data.trim(); 
-      if(data == "buzzer"){
-        buzzerActive = !buzzerActive;
-        break;
-      }
-    }
-    
-    delay(50);
+
+  String request = client.readStringUntil('\r');
+  client.flush();
+
+  if (request.indexOf("/BUZZER") != -1){
+    buzzerActive = !buzzerActive;
   }
-  
-  client.stop(); 
-  Serial.println("Client disconnected");
+
+    // Return the response
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: application/json");
+  client.println(""); //  do not forget this one
+  client.println("{\"name\": \"sonoo\", \"salary\": 56000, \"married\": true}");
 }
