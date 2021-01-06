@@ -9,9 +9,11 @@
 
   // Wifi SSID
 //  #define SSID "Secret"
+  #define SSID "P16Wemos"
   
   // Wifi password
 //  #define PASSWORD "Secret"
+  #define PASSWORD "P16Wemos"
 
   //Define pins
   #define BUZZERPIN D9
@@ -110,7 +112,7 @@ void dhtSensor(){
     dhtReady = false;
     humidity = 0.0;
    }
-   if(isnan(temperature) || temperature < 0) {
+   if(isnan(temperature)) {
     dhtReady = false;
     temperature = 0.0;
    }
