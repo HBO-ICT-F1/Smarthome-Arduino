@@ -1,9 +1,11 @@
+// Check if the application should run as a wifi server or ethernet server
 #ifdef ARDUINO_ARCH_ESP8266
+  // Include ESP8266WiFi header for WiFi server
   #include "ESP8266WiFi.h"
-  
+
+  // Use ESP8266WiFi classes for running server
   #define Server WiFiServer
   #define Client WiFiClient
-
 
   // Wifi SSID
 //  #define SSID "Secret"
@@ -14,16 +16,16 @@
   //Define pins
   #define BUZZER D9
 #else
+  // Include Ethernet headers for running a normal server
   #include "SPI.h"
   #include "Ethernet.h"
-  
+
+  // Use default ethernet classes for running server
   #define Server EthernetServer
   #define Client EthernetClient
 
-  byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
-  };
-  IPAddress ip(192, 168, 1, 177);
+  byte mac[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+  IPAddress ip(192, 168, 0, 1);
 
   //Define pins
   #define BUZZER 9
@@ -67,7 +69,9 @@ void setup(){
   if(Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield not found");
     return;
-  }else if(Ethernet.linkStatus() == LinkOFF) {
+  }
+  
+  if(Ethernet.linkStatus() == LinkOFF) {
     Serial.println("No Ethernet cable connected");
     return;
   }
@@ -91,8 +95,9 @@ void buzzer(){
 }
  
 void loop(){
-  Client client = server.available();
   buzzer();
+  
+  Client client = server.available();
   if (!client) return;
 
   String request = client.readStringUntil('\r');
