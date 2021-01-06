@@ -9,19 +9,16 @@
 
   // Wifi SSID
 //  #define SSID "Secret"
-  #define SSID "P16Wemos"
-  
+
   // Wifi password
 //  #define PASSWORD "Secret"
-  #define PASSWORD "P16Wemos"
 
   //Define pins
   #define BUZZERPIN D9
   #define DHTPIN  D8
 #else
-  #include "SPI.h"
-  #include "Ethernet.h"
-  
+  #include "Ethernet2.h"
+
   #define Server EthernetServer
   #define Client EthernetClient
 
@@ -36,7 +33,7 @@
 #endif
 
 //Define DHT TYPE
-#define DHTTYPE DHT11 
+#define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
 // Device hostname
@@ -70,25 +67,17 @@ void setup(){
     delay(1000);
     Serial.println("Connecting..");
   }
-  
+
   Serial.print("Connected to WiFi with ip ");
   Serial.println(WiFi.localIP());
 #else
   Ethernet.init(10);
   Ethernet.begin(mac, ip);
-
-  if(Ethernet.hardwareStatus() == EthernetNoHardware) {
-    Serial.println("Ethernet shield not found");
-    return;
-  }else if(Ethernet.linkStatus() == LinkOFF) {
-    Serial.println("No Ethernet cable connected");
-    return;
-  }
-  
   Serial.print("Connected to Ethernet with ip ");
   Serial.println(Ethernet.localIP());
+  w5500.setRetransmissionCount(1);
 #endif
- 
+
   server.begin();
   dht.begin();
 
@@ -96,10 +85,16 @@ void setup(){
   pinMode(BUZZERPIN, OUTPUT);
 }
 
+void ethernetDisconnect(Client client){
+  #ifndef ARDUINO_ARCH_ESP8266
+      client.stop();
+  #endif
+}
+
 void buzzer(){
   if(!buzzerActive) return;
   tone(BUZZERPIN, 2000);
-  delay(100); 
+  delay(100);
   noTone(BUZZERPIN);
   delay(100);
 }
@@ -117,11 +112,11 @@ void dhtSensor(){
     temperature = 0.0;
    }
 }
- 
+
 void loop(){
-  Client client = server.available();
   buzzer();
   dhtSensor();
+  Client client = server.available();
   if (!client) return;
 
   String request = client.readStringUntil('\r');
@@ -137,6 +132,7 @@ void loop(){
   if (request.indexOf("/buzzer") != -1){
     buzzerActive = !buzzerActive;
     client.println("{\"buzzer\": " + String(buzzerActive) + "}");
+    ethernetDisconnect(client);
     return;
   }
 
@@ -146,6 +142,8 @@ void loop(){
     Serial.print("Humi: ");
     Serial.println(humidity);
     client.println("{\"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + ", \"ready\": " + String(dhtReady) + "}");
+    ethernetDisconnect(client);
     return;
   }
+  ethernetDisconnect(client);
 }
