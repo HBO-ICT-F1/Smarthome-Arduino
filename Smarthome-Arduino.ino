@@ -1,11 +1,11 @@
-// Check if the application should run as a wifi server or ethernet server
-#ifdef ARDUINO_ARCH_ESP8266
-  // Include ESP8266WiFi header for WiFi server
-  #include "ESP8266WiFi.h"
+#include "DHT.h"
 
-  // Use ESP8266WiFi classes for running server
+#ifdef ARDUINO_ARCH_ESP8266
+  #include "ESP8266WiFi.h"
+  
   #define Server WiFiServer
   #define Client WiFiClient
+
 
   // Wifi SSID
 //  #define SSID "Secret"
@@ -14,22 +14,28 @@
 //  #define PASSWORD "Secret"
 
   //Define pins
-  #define BUZZER D9
+  #define BUZZERPIN D9
+  #define DHTPIN  D8
 #else
-  // Include Ethernet headers for running a normal server
   #include "SPI.h"
   #include "Ethernet.h"
-
-  // Use default ethernet classes for running server
+  
   #define Server EthernetServer
   #define Client EthernetClient
 
-  byte mac[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-  IPAddress ip(192, 168, 0, 1);
+  byte mac[] = {
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+  };
+  IPAddress ip(192, 168, 2, 69);
 
   //Define pins
-  #define BUZZER 9
+  #define BUZZERPIN 9
+  #define DHTPIN 8
 #endif
+
+//Define DHT TYPE
+#define DHTTYPE DHT11 
+DHT dht(DHTPIN, DHTTYPE);
 
 // Device hostname
 #define HOSTNAME "Smarthome"
@@ -42,6 +48,9 @@
 
 //Define global variable
 bool buzzerActive = false;
+float temperature = 0.0;
+float humidity = 0.0;
+bool dhtReady = false;
 
 Server server(PORT);
 
@@ -69,9 +78,7 @@ void setup(){
   if(Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield not found");
     return;
-  }
-  
-  if(Ethernet.linkStatus() == LinkOFF) {
+  }else if(Ethernet.linkStatus() == LinkOFF) {
     Serial.println("No Ethernet cable connected");
     return;
   }
@@ -81,35 +88,62 @@ void setup(){
 #endif
  
   server.begin();
+  dht.begin();
 
   //pinModes
-  pinMode(BUZZER, OUTPUT);
+  pinMode(BUZZERPIN, OUTPUT);
 }
 
 void buzzer(){
   if(!buzzerActive) return;
-  tone(BUZZER, 2000);
+  tone(BUZZERPIN, 2000);
   delay(100); 
-  noTone(BUZZER);
+  noTone(BUZZERPIN);
   delay(100);
+}
+
+void dhtSensor(){
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity();
+  dhtReady = true;
+   if (isnan(humidity)){
+    dhtReady = false;
+    humidity = 0.0;
+   }
+   if(isnan(temperature) || temperature < 0) {
+    dhtReady = false;
+    temperature = 0.0;
+   }
 }
  
 void loop(){
-  buzzer();
-  
   Client client = server.available();
+  buzzer();
+  dhtSensor();
   if (!client) return;
 
   String request = client.readStringUntil('\r');
   client.flush();
 
-  if (request.indexOf("/BUZZER") != -1){
-    buzzerActive = !buzzerActive;
-  }
 
     // Return the response
   client.println("HTTP/1.1 200 OK");
   client.println("Content-Type: application/json");
+  client.println("Connection: close");
   client.println(""); //  do not forget this one
-  client.println("{\"name\": \"sonoo\", \"salary\": 56000, \"married\": true}");
+
+  if (request.indexOf("/buzzer") != -1){
+    buzzerActive = !buzzerActive;
+    client.println("{\"buzzer\": " + String(buzzerActive) + "}");
+    return;
+  }
+
+  if (request.indexOf("/temp") != -1){
+    Serial.print("Temp: ");
+    Serial.println(temperature);
+    Serial.print("Humi: ");
+    Serial.println(humidity);
+    client.println("{\"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + ", \"ready\": " + String(dhtReady) + "}");
+    return;
+  }
 }
