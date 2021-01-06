@@ -15,7 +15,7 @@
 
   //Define pins
   #define BUZZERPIN D9
-  #define DHTPIN  D8
+  #define DHTPIN D8
 #else
   #include "Ethernet2.h"
 
@@ -42,14 +42,13 @@ DHT dht(DHTPIN, DHTTYPE);
 // Server port
 #define PORT 80
 
-// Timeout in seconds
-#define TIMEOUT 2
-
 //Define global variable
 bool buzzerActive = false;
+bool systemActive = false;
 float temperature = 0.0;
 float humidity = 0.0;
 bool dhtReady = false;
+uint8_t pairCode = 0;
 
 Server server(PORT);
 
@@ -122,28 +121,50 @@ void loop(){
   String request = client.readStringUntil('\r');
   client.flush();
 
-
-    // Return the response
+  // Return the response
   client.println("HTTP/1.1 200 OK");
   client.println("Content-Type: application/json");
   client.println("Connection: close");
   client.println(""); //  do not forget this one
 
-  if (request.indexOf("/buzzer") != -1){
-    buzzerActive = !buzzerActive;
-    client.println("{\"buzzer\": " + String(buzzerActive) + "}");
+  if (request.indexOf("/pair") != -1){
+    if(pairCode != 0){
+      client.println("{\"error\": \"device is already paired\"}");
+      ethernetDisconnect(client);
+      return;
+    }
+    randomSeed(millis());
+    pairCode = random(1000, 10000);
+    Serial.print("Pair code: ");
+    Serial.println(pairCode);
+    client.println("{\"code\": " + String(pairCode) + "}");
+    ethernetDisconnect(client);
+    return;
+  }
+  
+  if(pairCode == 0){
+    client.println("{\"error\": \"device not paired\"}");
     ethernetDisconnect(client);
     return;
   }
 
-  if (request.indexOf("/temp") != -1){
-    Serial.print("Temp: ");
-    Serial.println(temperature);
-    Serial.print("Humi: ");
-    Serial.println(humidity);
-    client.println("{\"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + ", \"ready\": " + String(dhtReady) + "}");
+  if (request.indexOf("code=" + String(pairCode)) == -1){
+    client.println("{\"error\": \"Invalid pair code\"}");
     ethernetDisconnect(client);
     return;
   }
+  
+  if (request.indexOf("?buzzer=") != -1){
+    buzzerActive = request.indexOf("true") != -1;
+  }
+  
+  client.print("{");
+  client.print("\"dth\": {");
+    client.print("\"temperature\": " + String(temperature) + ", ");
+    client.print("\"humidity\": " + String(humidity) + ", ");
+    client.print("\"ready\": " + String(dhtReady) + "");
+  client.print("}, ");
+  client.print("\"buzzer\": " + String(buzzerActive) + "");
+  client.println("}");
   ethernetDisconnect(client);
 }
