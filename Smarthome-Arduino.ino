@@ -44,6 +44,7 @@ DHT dht(DHTPIN, DHTTYPE);
 
 //Define global variable
 bool buzzerActive = false;
+unsigned long buzzerDelay = millis();
 bool systemActive = false;
 float temperature = 0.0;
 float humidity = 0.0;
@@ -92,10 +93,13 @@ void ethernetDisconnect(Client client){
 
 void buzzer(){
   if(!buzzerActive) return;
-  tone(BUZZERPIN, 2000);
-  delay(100);
-  noTone(BUZZERPIN);
-  delay(100);
+  if(buzzerDelay < millis()){
+    tone(BUZZERPIN, 2000);
+    if(buzzerDelay + 100 < millis()){
+      noTone(BUZZERPIN);
+      buzzerDelay = millis() + 100;
+    }
+  }
 }
 
 void dhtSensor(){
@@ -154,7 +158,7 @@ void loop(){
     return;
   }
   
-  if (request.indexOf("?buzzer=") != -1){
+  if (request.indexOf("buzzer=") != -1){
     buzzerActive = request.indexOf("true") != -1;
   }
   
