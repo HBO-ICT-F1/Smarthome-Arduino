@@ -9,9 +9,11 @@
 
   // Wifi SSID
 //  #define SSID "Secret"
+  #define SSID "P16Wemos"
 
   // Wifi password
 //  #define PASSWORD "Secret"
+  #define PASSWORD "P16Wemos"
 
   //Define pins
   #define BUZZERPIN D9
@@ -160,6 +162,7 @@ void loop(){
   
   if (request.indexOf("buzzer=") != -1){
     buzzerActive = request.indexOf("true") != -1;
+    noTone(BUZZERPIN);
   }
   
   client.print("{");
