@@ -9,11 +9,9 @@
 
   // Wifi SSID
 //  #define SSID "Secret"
-  #define SSID "P16Wemos"
 
   // Wifi password
 //  #define PASSWORD "Secret"
-  #define PASSWORD "P16Wemos"
 
   //Define pins
   #define BUZZERPIN D9
