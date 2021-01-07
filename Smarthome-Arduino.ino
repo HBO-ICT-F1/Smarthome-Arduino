@@ -27,7 +27,6 @@
   byte mac[] = {
     0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
   };
-  IPAddress ip(192, 168, 2, 69);
 
   //Define pins
   #define BUZZERPIN 9
@@ -74,10 +73,9 @@ void setup(){
   Serial.println(WiFi.localIP());
 #else
   Ethernet.init(10);
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac);
   Serial.print("Connected to Ethernet with ip ");
   Serial.println(Ethernet.localIP());
-  w5500.setRetransmissionCount(1);
 #endif
 
   server.begin();
