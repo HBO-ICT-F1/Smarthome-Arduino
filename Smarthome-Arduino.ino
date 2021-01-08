@@ -48,7 +48,7 @@ bool systemActive = false;
 float temperature = 0.0;
 float humidity = 0.0;
 bool dhtReady = false;
-uint8_t pairCode = 0;
+uint16_t pairCode = 0;
 
 Server server(PORT);
 
@@ -75,7 +75,7 @@ void setup(){
   Serial.print("Connected to Ethernet with ip ");
   Serial.println(Ethernet.localIP());
 #endif
-
+  randomSeed(analogRead(0));
   server.begin();
   dht.begin();
 
@@ -135,7 +135,6 @@ void loop(){
       ethernetDisconnect(client);
       return;
     }
-    randomSeed(millis());
     pairCode = random(1000, 10000);
     Serial.print("Pair code: ");
     Serial.println(pairCode);
