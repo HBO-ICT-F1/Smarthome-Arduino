@@ -14,6 +14,7 @@
 //  #define PASSWORD "Secret"
 
   //Define pins
+  #define LEDPIN D10
   #define BUZZERPIN D9
   #define DHTPIN D8
 #else
@@ -27,6 +28,7 @@
   };
 
   //Define pins
+  #define LEDPIN 10
   #define BUZZERPIN 9
   #define DHTPIN 8
 #endif
@@ -43,12 +45,14 @@ DHT dht(DHTPIN, DHTTYPE);
 
 //Define global variable
 bool buzzerActive = false;
+bool ledActive = false;
 unsigned long buzzerDelay = millis();
 bool systemActive = false;
 float temperature = 0.0;
 float humidity = 0.0;
 bool dhtReady = false;
 uint16_t pairCode = 0;
+uint16_t light = 0;
 
 Server server(PORT);
 
@@ -81,6 +85,11 @@ void setup(){
 
   //pinModes
   pinMode(BUZZERPIN, OUTPUT);
+  pinMode(LEDPIN, OUTPUT);
+  pinMode(A0, INPUT);
+
+  //InitStatus
+  digitalWrite(LEDPIN, LOW);
 }
 
 void ethernetDisconnect(Client client){
@@ -155,9 +164,18 @@ void loop(){
     return;
   }
   
-  if (request.indexOf("buzzer=") != -1){
-    buzzerActive = request.indexOf("true") != -1;
+  if (request.indexOf("buzzer") != -1){
+    buzzerActive = !buzzerActive;
     noTone(BUZZERPIN);
+  }
+
+  if (request.indexOf("led") != -1){
+    ledActive = !ledActive;
+    if(ledActive){
+      digitalWrite(LEDPIN, HIGH);
+    }else{
+      digitalWrite(LEDPIN, LOW);
+    }
   }
   
   client.print("{");
@@ -166,7 +184,10 @@ void loop(){
     client.print("\"humidity\": " + String(humidity) + ", ");
     client.print("\"ready\": " + String(dhtReady) + "");
   client.print("}, ");
+  client.print("\"light\": " + String(analogRead(A0)) + ",");
+  client.print("\"led\": " + String(ledActive) + ",");
   client.print("\"buzzer\": " + String(buzzerActive) + "");
+
   client.println("}");
   ethernetDisconnect(client);
 }
