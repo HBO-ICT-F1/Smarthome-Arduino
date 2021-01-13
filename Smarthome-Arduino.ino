@@ -28,7 +28,7 @@
   };
 
   //Define pins
-  #define LEDPIN 10
+  #define LEDPIN 7
   #define BUZZERPIN 9
   #define DHTPIN 8
 #endif
@@ -137,6 +137,11 @@ void loop(){
   client.println("Content-Type: application/json");
   client.println("Connection: close");
   client.println(""); //  do not forget this one
+
+
+  if (request.indexOf("/unpair") != -1){
+    pairCode = 0;  
+  }
 
   if (request.indexOf("/pair") != -1){
     if(pairCode != 0){
